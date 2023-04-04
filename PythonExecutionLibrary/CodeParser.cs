@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PythonExecutionLibrary
+namespace ZCU.PythonExecutionLibrary
 {
     /// <summary>
     /// Class providing methods used for formatting python code

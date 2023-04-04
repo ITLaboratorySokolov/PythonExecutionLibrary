@@ -1,5 +1,5 @@
 ﻿using Python.Runtime;
-using PythonExecutionLibrary;
+using ZCU.PythonExecutionLibrary;
 using System.Globalization;
 
 namespace PythonExectution

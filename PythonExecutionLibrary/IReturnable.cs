@@ -1,6 +1,6 @@
 ﻿using Python.Runtime;
 
-namespace PythonExecutionLibrary
+namespace ZCU.PythonExecutionLibrary
 {
     /// <summary>
     /// Interface for a class that can be modified by python code

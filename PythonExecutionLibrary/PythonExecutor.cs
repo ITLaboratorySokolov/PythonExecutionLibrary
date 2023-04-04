@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PythonExecutionLibrary
+namespace ZCU.PythonExecutionLibrary
 {
     /// <summary>
     /// Class that executes python code
@@ -79,7 +79,12 @@ namespace PythonExecutionLibrary
                     throw new Exception("Return parameters couldn't be parsed");
             } catch (Exception e)
             {
+                PythonEngine.Shutdown();
+
                 ERROR_MSG = e.Message;
+                if (e.InnerException != null)
+                    ERROR_MSG = e.InnerException.Message;
+
                 return false;
             }
 

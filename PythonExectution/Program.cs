@@ -1,4 +1,4 @@
-﻿using PythonExecutionLibrary;
+﻿using ZCU.PythonExecutionLibrary;
 
 namespace PythonExectution;
 class Program
