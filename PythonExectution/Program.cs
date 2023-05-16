@@ -1,4 +1,7 @@
-﻿using ZCU.PythonExecutionLibrary;
+﻿using Python.Runtime;
+using System.Drawing;
+using System.Globalization;
+using ZCU.PythonExecutionLibrary;
 
 namespace PythonExectution;
 class Program
@@ -29,6 +32,16 @@ class Program
 
         Person ps = new Person();
         bool callFunc = pe.RunCode(prepCode, varValues, ps);
-        Console.WriteLine(ps.ToString());
+        if (callFunc)
+            Console.WriteLine(ps.ToString());
+        else
+        {
+            Console.WriteLine(pe.ERROR_MSG);
+
+            p = @"D:\Instalace\VS\Shared\Python37_64\python37.dll";
+            pe.SetPython(p);
+            callFunc = pe.RunCode(prepCode, varValues, ps);
+            Console.WriteLine(ps.ToString());
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Python.Runtime;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace ZCU.PythonExecutionLibrary
 {
@@ -12,13 +13,24 @@ namespace ZCU.PythonExecutionLibrary
         /// <summary> Error message of the last error </summary>
         public string ERROR_MSG;
 
+        public bool initializedOnce;
+        bool setValidPythonDll;
+
         /// <summary>
         /// Set python .dll must be called before executing any code
         /// </summary>
         /// <param name="path"> Path to python dll </param>
         public void SetPython(string path)
         {
-            Runtime.PythonDLL = path;
+            if (initializedOnce)
+                return;
+
+            if (File.Exists(path) && path.EndsWith(".dll"))
+            {
+                Runtime.PythonDLL = path;
+                setValidPythonDll = true;
+            }
+
         }
 
         /// <summary>
@@ -48,9 +60,16 @@ namespace ZCU.PythonExecutionLibrary
         /// <returns> True if successful, false if not - error message saved into ERROR_MSG </returns>
         public bool RunCode(string code, Dictionary<string, object> varValues, IReturnable returnClass)
         {
+            if (!setValidPythonDll)
+            {
+                ERROR_MSG = "No valid python.dll set";
+                return false;
+            }
+
             try
             {
                 PythonEngine.Initialize();
+                initializedOnce = true;
                 bool parsing = true;
 
                 // acquire the GIL before using the Python interpreter
@@ -71,6 +90,7 @@ namespace ZCU.PythonExecutionLibrary
                         PyObject res = scope.Get("res");
                         if (returnClass != null)
                             parsing = returnClass.SetParameters(res);
+                        res.Dispose();
                     }
                 }
                 PythonEngine.Shutdown();
@@ -79,7 +99,7 @@ namespace ZCU.PythonExecutionLibrary
                     throw new Exception("Return parameters couldn't be parsed");
             } catch (Exception e)
             {
-                PythonEngine.Shutdown();
+                //PythonEngine.Shutdown();
 
                 ERROR_MSG = e.Message;
                 if (e.InnerException != null)
