@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace ZCU.PythonExecutionLibrary
 {
@@ -30,7 +31,6 @@ namespace ZCU.PythonExecutionLibrary
                 Runtime.PythonDLL = path;
                 setValidPythonDll = true;
             }
-
         }
 
         /// <summary>
@@ -38,16 +38,14 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         /// <param name="funcName"> User function name </param>
         /// <param name="paramNames"> User function parameter names ("int name", "int age" etc) </param>
-        /// <param name="varValues"> User function call parameters (names and their valeus - <"name", "John">, <"age", 18> etc) </param>
+        /// <param name="callParamNames"> Names of user function call parameters ("name", "age", etc) </param>
         /// <param name="code"> User function python code </param>
         /// <returns> Created python code </returns>
-        public string CreateCode(string funcName, List<string> paramNames, Dictionary<string, object> varValues, string code)
+        public string CreateCode(string funcName, List<string> paramNames, List<string> callParamNames, string code)
         {
-            List<string> keyList = new List<string>(varValues.Keys);
-
             code = CodeParser.IndentFunctionText(code);
             string res = CodeParser.CreateFuncHeader(funcName, paramNames) + "\n" + code;
-            res += "\nres = " + CodeParser.CreateFuncCall(funcName, keyList);
+            res += "\nres = " + CodeParser.CreateFuncCall(funcName, callParamNames);
             return res;
         }
 
@@ -68,8 +66,6 @@ namespace ZCU.PythonExecutionLibrary
 
             try
             {
-                PythonEngine.Initialize();
-                initializedOnce = true;
                 bool parsing = true;
 
                 // acquire the GIL before using the Python interpreter
@@ -78,37 +74,48 @@ namespace ZCU.PythonExecutionLibrary
                     // create a Python scope
                     using (PyModule scope = Py.CreateScope())
                     {
-                        foreach (string name in varValues.Keys) 
+                        foreach (var varPair in varValues) 
                         {
-                            object v;
-                            varValues.TryGetValue(name, out v);
-                            scope.Set(name, v);
+                            scope.Set(varPair.Key, varPair.Value);
                         }
                         
                         scope.Exec(code);
 
                         PyObject res = scope.Get("res");
                         if (returnClass != null)
+                        {
                             parsing = returnClass.SetParameters(res);
+                        }
+                            
                         res.Dispose();
                     }
                 }
-                PythonEngine.Shutdown();
-
+                
                 if (!parsing)
                     throw new Exception("Return parameters couldn't be parsed");
             } catch (Exception e)
             {
-                //PythonEngine.Shutdown();
-
                 ERROR_MSG = e.Message;
                 if (e.InnerException != null)
+                {
                     ERROR_MSG = e.InnerException.Message;
+                }
 
                 return false;
             }
 
             return true;
+        }
+
+        public void Initialize()
+        {
+            PythonEngine.Initialize();
+            initializedOnce = true;
+        }
+
+        public void Shutdown()
+        {
+            PythonEngine.Shutdown();
         }
     }
 }
