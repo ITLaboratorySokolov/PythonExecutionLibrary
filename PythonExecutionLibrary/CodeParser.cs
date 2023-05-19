@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 
 namespace ZCU.PythonExecutionLibrary
 {
@@ -15,15 +16,15 @@ namespace ZCU.PythonExecutionLibrary
         /// <returns></returns>
         public static string CreateFuncHeader(string funcName, List<string> names)
         {
-            string res = $"def {funcName}(";
-            for (int i = 0; i < names.Count; i++)
+            var res = new StringBuilder($"def {funcName}(");
+            for (var i = 0; i < names.Count - 1; i++)
             {
-                res += $"{names[i]}";
-                if (i < names.Count - 1)
-                    res += ", ";
+                res.Append(names[i]);
+                res.Append(", ");
             }
-            res += "):";
-            return res;
+
+            res.Append(names[names.Count - 1] + "):");
+            return res.ToString();
         }
 
         /// <summary>
@@ -34,15 +35,16 @@ namespace ZCU.PythonExecutionLibrary
         /// <returns></returns>
         public static string CreateFuncCall(string funcName, List<string> names)
         {
-            string res = $"{funcName}(";
-            for (int i = 0; i < names.Count; i++)
+            var res = new StringBuilder(funcName + '(');
+
+            for (var i = 0; i < names.Count - 1; i++)
             {
-                res += $"{names[i]}";
-                if (i < names.Count - 1)
-                    res += ", ";
+                res.Append(names[i]);
+                res.Append(", ");
             }
-            res += ")";
-            return res;
+
+            res.Append(names[names.Count - 1] + ')');
+            return res.ToString();
         }
 
         /// <summary>
