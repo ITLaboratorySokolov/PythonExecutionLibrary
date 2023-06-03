@@ -11,55 +11,65 @@ namespace ZCU.PythonExecutionLibrary
         /// <summary>
         /// Create header of the definition of a python function
         /// </summary>
+        /// <param name="builder">String builder that contains final code</param>
         /// <param name="funcName"> Function name </param>
         /// <param name="names"> Function parameters ("string name", "int age", etc) </param>
         /// <returns></returns>
-        public static string CreateFuncHeader(string funcName, List<string> names)
+        public static void CreateFuncHeader(StringBuilder builder, string funcName, List<string> names)
         {
-            var res = new StringBuilder($"def {funcName}(");
-            for (var i = 0; i < names.Count - 1; i++)
+            builder.Append($"def {funcName}(");
+
+            if (names.Count > 0)
             {
-                res.Append(names[i]);
-                res.Append(", ");
+                for (var i = 0; i < names.Count - 1; i++)
+                {
+                    builder.Append(names[i]);
+                    builder.Append(", ");
+                }
+
+                builder.Append(names[names.Count - 1]);
             }
 
-            res.Append(names[names.Count - 1] + "):");
-            return res.ToString();
+            builder.Append("):");
         }
 
         /// <summary>
         /// Create function call of a python function
         /// </summary>
+        /// <param name="builder">String builder that contains final code</param>
         /// <param name="funcName"> Function name </param>
         /// <param name="names"> Parameters ("name", "age", etc) </param>
         /// <returns></returns>
-        public static string CreateFuncCall(string funcName, List<string> names)
+        public static void CreateFuncCall(StringBuilder builder, string funcName, List<string> names)
         {
-            var res = new StringBuilder(funcName + '(');
+            builder.Append(funcName + '(');
 
-            for (var i = 0; i < names.Count - 1; i++)
+            if (names.Count > 0)
             {
-                res.Append(names[i]);
-                res.Append(", ");
+                for (var i = 0; i < names.Count - 1; i++)
+                {
+                    builder.Append(names[i]);
+                    builder.Append(", ");
+                }
+
+                builder.Append(names[names.Count - 1]);
             }
 
-            res.Append(names[names.Count - 1] + ')');
-            return res.ToString();
+            builder.Append(')');
         }
 
         /// <summary>
         /// Format python code into a python function body
         /// </summary>
+        /// <param name="builder">String builder that contains final code</param>
         /// <param name="code"> Code </param>
         /// <returns> Formatted code </returns>
-        public static string IndentFunctionText(string code)
+        public static void IndentFunctionText(StringBuilder builder, string code)
         {
-            string res = "\t" + code.Replace("\n", "\n\t");
-            
             //TODO could be split into lines, then trim each line and then indent
             // depends if return statement will be in required in user code or not
-
-            return res;
+            builder.Append("\t");
+            builder.Append(code.Replace("\n", "\n\t"));
         }
     }
 }

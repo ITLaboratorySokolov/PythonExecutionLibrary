@@ -11,11 +11,11 @@ namespace ZCU.PythonExecutionLibrary
     /// </summary>
     public class PythonExecutor
     {
-        /// <summary> Error message of the last error </summary>
-        public string ERROR_MSG;
+        private bool _initializedOnce;
+        private bool _setValidPythonDll;
 
-        public bool initializedOnce;
-        bool setValidPythonDll;
+        /// <summary> Error message of the last error </summary>
+        public string ErrorMsg { get; private set; }
 
         /// <summary>
         /// Set python .dll must be called before executing any code
@@ -23,13 +23,15 @@ namespace ZCU.PythonExecutionLibrary
         /// <param name="path"> Path to python dll </param>
         public void SetPython(string path)
         {
-            if (initializedOnce)
+            if (_initializedOnce)
+            {
                 return;
+            }
 
             if (File.Exists(path) && path.EndsWith(".dll"))
             {
                 Runtime.PythonDLL = path;
-                setValidPythonDll = true;
+                _setValidPythonDll = true;
             }
         }
 
@@ -43,37 +45,55 @@ namespace ZCU.PythonExecutionLibrary
         /// <returns> Created python code </returns>
         public string CreateCode(string funcName, List<string> paramNames, List<string> callParamNames, string code)
         {
-            code = CodeParser.IndentFunctionText(code);
-            string res = CodeParser.CreateFuncHeader(funcName, paramNames) + "\n" + code;
-            res += "\nres = " + CodeParser.CreateFuncCall(funcName, callParamNames);
-            return res;
+            var builder = new StringBuilder();
+            CodeParser.CreateFuncHeader(builder, funcName, paramNames);
+            builder.Append("\n");
+            CodeParser.IndentFunctionText(builder, code);
+            builder.Append("\nres = ");
+            CodeParser.CreateFuncCall(builder, funcName, callParamNames);
+
+            return builder.ToString();
         }
 
         /// <summary>
         /// Run python code
         /// </summary>
         /// <param name="code"> Code to run </param>
-        /// <param name="varValues"> User function call parameters (names and their valeus - <"name", "John">, <"age", 18> etc) </param>
+        /// <param name="varValues"> User function call parameters (names and their values - <"name", "John">, <"age", 18> etc) </param>
         /// <param name="returnClass"> Class into which the return values will be stored </param>
         /// <returns> True if successful, false if not - error message saved into ERROR_MSG </returns>
-        public bool RunCode(string code, Dictionary<string, object> varValues, IReturnable returnClass)
+        public bool RunCode(string code, Dictionary<string, object> varValues, IReturnable returnClass, TextWriter stdout = null, TextWriter stderr = null)
         {
-            if (!setValidPythonDll)
+            if (!_initializedOnce)
             {
-                ERROR_MSG = "No valid python.dll set";
+                ErrorMsg = "Python executor is not initialized";
                 return false;
             }
 
             try
             {
-                bool parsing = true;
+                var parsing = true;
 
                 // acquire the GIL before using the Python interpreter
                 using (Py.GIL())
                 {
                     // create a Python scope
-                    using (PyModule scope = Py.CreateScope())
+                    using (var scope = Py.CreateScope())
                     {
+                        dynamic sys = Py.Import("sys");
+
+                        if (stdout != null)
+                        {
+                            var output = new Output(stdout);
+                            sys.stdout = output;
+                        }
+
+                        if (stderr != null)
+                        {
+                            var output = new Output(stderr);
+                            sys.stderr = output;
+                        }
+
                         foreach (var varPair in varValues) 
                         {
                             scope.Set(varPair.Key, varPair.Value);
@@ -81,7 +101,7 @@ namespace ZCU.PythonExecutionLibrary
                         
                         scope.Exec(code);
 
-                        PyObject res = scope.Get("res");
+                        var res = scope.Get("res");
                         if (returnClass != null)
                         {
                             parsing = returnClass.SetParameters(res);
@@ -90,15 +110,17 @@ namespace ZCU.PythonExecutionLibrary
                         res.Dispose();
                     }
                 }
-                
+
                 if (!parsing)
+                {
                     throw new Exception("Return parameters couldn't be parsed");
+                }
             } catch (Exception e)
             {
-                ERROR_MSG = e.Message;
+                ErrorMsg = e.Message;
                 if (e.InnerException != null)
                 {
-                    ERROR_MSG = e.InnerException.Message;
+                    ErrorMsg = e.InnerException.Message;
                 }
 
                 return false;
@@ -109,13 +131,26 @@ namespace ZCU.PythonExecutionLibrary
 
         public void Initialize()
         {
-            PythonEngine.Initialize();
-            initializedOnce = true;
+            if (!_setValidPythonDll)
+            {
+                ErrorMsg = "No valid python.dll set";
+                return;
+            }
+
+            if (!_initializedOnce)
+            {
+                PythonEngine.Initialize();
+                _initializedOnce = true;
+            }
         }
 
         public void Shutdown()
         {
-            PythonEngine.Shutdown();
+            if (_initializedOnce)
+            {
+                PythonEngine.Shutdown();
+                _initializedOnce = false;
+            }
         }
     }
 }
