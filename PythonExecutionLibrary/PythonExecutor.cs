@@ -68,23 +68,26 @@ namespace ZCU.PythonExecutionLibrary
                 throw new InvalidOperationException("Python engine is not initialized");
             }
 
-            // acquire the GIL before using the Python interpreter
-            using (Py.GIL())
+            HandleException(() =>
             {
-                // create a Python scope
-                using (var scope = Py.CreateScope())
+                // acquire the GIL before using the Python interpreter
+                using (Py.GIL())
                 {
-                    RedirectStreams(stdout, stderr);
-                    SetFunctionParameters(varValues, scope);
-
-                    scope.Exec(code);
-
-                    if (!TryParseReturnValue(returnClass, scope))
+                    // create a Python scope
+                    using (var scope = Py.CreateScope())
                     {
-                        throw new FormatException("Return parameters couldn't be parsed");
+                        RedirectStreams(stdout, stderr);
+                        SetFunctionParameters(varValues, scope);
+
+                        scope.Exec(code);
+
+                        if (!TryParseReturnValue(returnClass, scope))
+                        {
+                            throw new FormatException("Return parameters couldn't be parsed");
+                        }
                     }
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -92,16 +95,16 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         public void Initialize()
         {
-            try
+            if (_initializedOnce)
+            {
+                return;
+            }
+
+            HandleException(() =>
             {
                 PythonEngine.Initialize();
-                PythonEngine.BeginAllowThreads();
                 _initializedOnce = true;
-            }
-            catch(MissingMethodException e)
-            {
-                throw new DllNotFoundException("Python DLL was not set or does not point to a supported Python runtime DLL.", e);
-            }
+            });
         }
 
         /// <summary>
@@ -109,8 +112,42 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         public void Shutdown()
         {
-            PythonEngine.Shutdown();
-            _initializedOnce = false;
+            if(!_initializedOnce)
+            {
+                return;
+            }
+
+            HandleException(() =>
+            {
+                PythonEngine.Shutdown();
+                _initializedOnce = false;
+            });
+        }
+
+        private void HandleException(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (TypeInitializationException e)
+            {
+                _initializedOnce = false;
+
+                if (e.InnerException != null)
+                {
+                    while (e.InnerException is TypeInitializationException inner)
+                    {
+                        e = inner;
+                    }
+
+                    throw e.InnerException;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         private static void RedirectStreams(TextWriter stdout, TextWriter stderr)
