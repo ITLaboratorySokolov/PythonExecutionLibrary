@@ -103,6 +103,7 @@ namespace ZCU.PythonExecutionLibrary
             HandleException(() =>
             {
                 PythonEngine.Initialize();
+                PythonEngine.BeginAllowThreads();
                 _initializedOnce = true;
             });
         }
