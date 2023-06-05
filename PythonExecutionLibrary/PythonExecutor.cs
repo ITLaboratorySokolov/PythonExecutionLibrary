@@ -59,6 +59,8 @@ namespace ZCU.PythonExecutionLibrary
         /// <param name="code"> Code to run </param>
         /// <param name="varValues"> User function call parameters (names and their values - <"name", "John">, <"age", 18> etc) </param>
         /// <param name="returnClass"> Class into which the return values will be stored </param>
+        /// <param name="stdout">Output stream</param>
+        /// <param name="stderr">Error stream</param>
         public void RunCode(string code, Dictionary<string, object> varValues, IReturnable returnClass, TextWriter stdout = null, TextWriter stderr = null)
         {
             if (!_initializedOnce)
@@ -79,7 +81,7 @@ namespace ZCU.PythonExecutionLibrary
 
                     if (!TryParseReturnValue(returnClass, scope))
                     {
-                        throw new Exception("Return parameters couldn't be parsed");
+                        throw new FormatException("Return parameters couldn't be parsed");
                     }
                 }
             }
@@ -90,8 +92,15 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         public void Initialize()
         {
-            PythonEngine.Initialize();
-            _initializedOnce = true;
+            try
+            {
+                PythonEngine.Initialize();
+                _initializedOnce = true;
+            }
+            catch(MissingMethodException e)
+            {
+                throw new DllNotFoundException("Python DLL was not set or does not point to a supported Python runtime DLL.", e);
+            }
         }
 
         /// <summary>
