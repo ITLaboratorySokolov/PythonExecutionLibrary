@@ -95,6 +95,7 @@ namespace ZCU.PythonExecutionLibrary
             try
             {
                 PythonEngine.Initialize();
+                PythonEngine.BeginAllowThreads();
                 _initializedOnce = true;
             }
             catch(MissingMethodException e)
