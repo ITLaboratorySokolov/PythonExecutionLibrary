@@ -14,7 +14,8 @@ class Program
 
         //var p = @"E:\Programs\Python\python311.dll"; 
         //var p = @"E:\Programs\Unity\2022.3.0f1\modules.json";
-        var p = @"""C:\Users\dom-dev\.nuget\packages\microsoft.windowsdesktop.app.ref\6.0.16\ref\net6.0\PresentationUI.dll""";
+        //var p = @"""C:\Users\dom-dev\.nuget\packages\microsoft.windowsdesktop.app.ref\6.0.16\ref\net6.0\PresentationUI.dll""";
+        var p = @"D:\Instalace\VS\Shared"; //\Python37_64\python37.dll";
         pe.SetPython(p);
 
         var funcName = "userCode";
@@ -30,7 +31,9 @@ class Program
         varValues.Add("age", 13);
 
         
-        var code = "import sys\npint(\"test test test\")\nreturn [nm, snm, age]";
+        var code = "import sys\n" +
+                   "print(\"test test test\")\n" +
+                   "return [nm, snm, age]";
         var prepCode = pe.CreateCode(funcName, paramNames, varValues.Keys.ToList(), code);
         Console.WriteLine(prepCode);
 

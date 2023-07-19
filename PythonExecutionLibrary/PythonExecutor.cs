@@ -13,7 +13,7 @@ namespace ZCU.PythonExecutionLibrary
     {
         private const string ReturnVariableName = "res";
 
-        private bool _initializedOnce;
+        public bool initializedOnce;
 
         /// <summary>
         /// Set python .dll must be called before executing any code
@@ -24,7 +24,7 @@ namespace ZCU.PythonExecutionLibrary
             // Runtime.PythonDLL throws an exception if the engine is already initialized
             // There is no reason to change dll if engine is already running
             // This prevents the exception
-            if (_initializedOnce)
+            if (initializedOnce)
             {
                 return;
             }
@@ -63,7 +63,7 @@ namespace ZCU.PythonExecutionLibrary
         /// <param name="stderr">Error stream</param>
         public void RunCode(string code, Dictionary<string, object> varValues, IReturnable returnClass, TextWriter stdout = null, TextWriter stderr = null)
         {
-            if (!_initializedOnce)
+            if (!initializedOnce)
             {
                 throw new InvalidOperationException("Python engine is not initialized");
             }
@@ -95,7 +95,7 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         public void Initialize()
         {
-            if (_initializedOnce)
+            if (initializedOnce)
             {
                 return;
             }
@@ -104,7 +104,7 @@ namespace ZCU.PythonExecutionLibrary
             {
                 PythonEngine.Initialize();
                 PythonEngine.BeginAllowThreads();
-                _initializedOnce = true;
+                initializedOnce = true;
             });
         }
 
@@ -113,7 +113,7 @@ namespace ZCU.PythonExecutionLibrary
         /// </summary>
         public void Shutdown()
         {
-            if(!_initializedOnce)
+            if(!initializedOnce)
             {
                 return;
             }
@@ -121,7 +121,7 @@ namespace ZCU.PythonExecutionLibrary
             HandleException(() =>
             {
                 PythonEngine.Shutdown();
-                _initializedOnce = false;
+                initializedOnce = false;
             });
         }
 
@@ -133,7 +133,7 @@ namespace ZCU.PythonExecutionLibrary
             }
             catch (TypeInitializationException e)
             {
-                _initializedOnce = false;
+                initializedOnce = false;
 
                 if (e.InnerException != null)
                 {
